@@ -119,3 +119,13 @@ Example:
       (getcache superclasses *mixins*
                 (make-instance (class-of (first superclasses)) 
                                :direct-superclasses superclasses)))))
+
+(defmacro-clause (VCOLLECT expr &optional INTO var)
+  "Like COLLECT but returns elements in the vector"
+  `(accumulate ,expr
+               by (lambda (x y)
+                    (vector-push-extend x y)
+                    y) 
+               initial-value (make-array 
+                              0 :adjustable t :fill-pointer t)
+               into ,var))
