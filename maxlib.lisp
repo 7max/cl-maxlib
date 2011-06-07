@@ -129,3 +129,19 @@ Example:
                initial-value (make-array 
                               0 :adjustable t :fill-pointer t)
                into ,var))
+
+(def (macro e) loop-while (pred &body body)
+  "Execute body while PRED is true"
+  (with-gensyms (start end) 
+   `(tagbody 
+       ,start
+       (unless ,pred
+         (go ,end))
+       ,@body
+       (go ,start)
+       ,end)))
+
+
+(def (function e) cat (&rest strings) 
+    "A shortcut for (concatenate 'string foo bar)."
+  (apply 'concatenate 'string strings))
