@@ -145,3 +145,14 @@ Example:
 (def (function e) cat (&rest strings) 
     "A shortcut for (concatenate 'string foo bar)."
   (apply 'concatenate 'string strings))
+
+;; (vcollect ...) clause for iterate that collects into an array
+(defmacro-clause (VCOLLECT expr &optional INTO var)
+  `(accumulate ,expr
+               by (lambda (x y)
+                    (vector-push-extend x y)
+                    y) 
+               initial-value (make-array 
+                              0 :adjustable t :fill-pointer t)
+               into ,var))
+

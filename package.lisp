@@ -10,4 +10,5 @@
                      (when (cl:find-package :cl-maxlib)
                        (cl:do-external-symbols (s :cl-maxlib list)
                          (cl:push s list)))))
+   (:export :vcollect)
    (:shadowing-import-from :alexandria :when-let :ensure-list :ensure-function))
