@@ -2,7 +2,6 @@
 (cl:defpackage :cl-maxlib
    (:use :closer-common-lisp :closer-mop
          :demacs
-         :cl-log
          :iterate
          :alexandria
          :stefil)
