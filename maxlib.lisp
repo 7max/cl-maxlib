@@ -156,14 +156,7 @@ EXPR2 and returns results as two values"
        (minimizing ,expr2 into ,v2)
        (finally (return (values ,v1 ,v2))))))
 
-(def (macro e) maximize-and-minimize (expr1 expr2)
-  "Expands into the ITERATE clause that maximizes EXPR1 and minimizes
-EXPR2 and returns results as two values"
-  (with-unique-names (v1 v2)
-    `(progn
-       (maximizing ,expr1 into ,v1)
-       (minimizing ,expr2 into ,v2)
-       (finally (return (values ,v1 ,v2))))))
+
 
 
 
