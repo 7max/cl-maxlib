@@ -32,11 +32,11 @@ If CLASS is of type CLASS, ALLOCATE-INSTANCE is used.")
   (:method ((class class))
     (allocate-instance class)))
 
-(def (generic e) copy-slot-value (object slot-value)
+(def (generic e) copy-slot-value (object slot-name slot-value)
   (:documentation "When COPY-INSTANCE copies slots, it calls this function
 to produce a new slot value. Default implementation simply returns SLOT-VALUE
 producing a shallow copy")
-  (:method (object slot-value)
+  (:method (object slot-name slot-value)
     slot-value))
 
 (def (generic e) copy-instance (object &rest initargs &key &allow-other-keys)
@@ -56,5 +56,5 @@ REINITIALIZE-INSTANCE is called to update the copy with INITARGS.")
           (when (slot-boundp object slot-name)
             (setf (slot-value copy slot-name)
                   (copy-slot-value
-                   object (slot-value object slot-name))))))
+                   object slot-name (slot-value object slot-name))))))
       (apply #'reinitialize-instance copy initargs))))
