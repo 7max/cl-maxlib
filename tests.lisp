@@ -1,7 +1,7 @@
 (cl:in-package :cl-maxlib)
 
 (def series test-series
-     (a 0 :type fixnum)
+     (a 0 :type integer)
      (b (error "should not happen")
         :type (unsigned-byte 16)))
 

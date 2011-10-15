@@ -88,7 +88,12 @@ Example usage pattern:
                  (progn
                    ,@default))))))
 
+#+sbcl
 (defvar *mixins* (make-hash-table :test #'equal :synchronized t)
+  "Hash table to cache the mixins we created")
+
+#-sbcl
+(defvar *mixins* (make-hash-table :test #'equal)
   "Hash table to cache the mixins we created")
 
 (def (function e) make-mixin-class (&rest parents)

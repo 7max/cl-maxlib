@@ -330,20 +330,20 @@ columns) macro"
             (defmethod series-deep-copy ((series ,series-name))
               (,(series-desc-deep-copy-series desc) series))
 
-            (defmethod series-ensure-capacity ((series ,series-name) (size fixnum))
+            (defmethod series-ensure-capacity ((series ,series-name) size)
               (,(series-desc-series-ensure-capacity desc) series size))
             
-            (defmethod series-allocate-capacity ((series ,series-name) (size fixnum))
+            (defmethod series-allocate-capacity ((series ,series-name) size)
               (,(series-desc-series-allocate-capacity desc) series size))
 
             (defun ,(series-desc-series-ensure-capacity desc) (series size)
               (declare (type ,series-name series) 
-                       (type fixnum size))
+                       (type (fixnum size)))
               (,(series-desc-increase-capacity desc) series size))
 
             (defun ,(series-desc-series-allocate-capacity desc) (series size)
               (declare (type ,series-name series) 
-                       (type fixnum size))
+                       (type (fixnum size)))
               (when (< size (series-length series))
                 (error "Can not allocate series capacity below its length"))
               (setf (series-capacity series) size)
@@ -478,7 +478,7 @@ at each specified index.
                 (series size)
               "Check if series capacacity is above the specified size,
 and increase it if nessesary"
-              (declare (series series) (fixnum size))
+              (declare (type series series) (type fixnum size))
               (when (> size (series-capacity series))
                 (,(series-desc-increase-capacity desc) series size))
               (values))
@@ -486,7 +486,8 @@ and increase it if nessesary"
             (defun ,(series-desc-increase-capacity desc)
                 (series size)
               "Increase the series capacity to at least specified size" 
-              (declare (series series) (fixnum size))
+              (declare (type series series)
+                       (type fixnum size))
               (iter 
                 (while (< (series-capacity series) size))
                 (setf (series-capacity series)
@@ -518,7 +519,7 @@ and increase it if nessesary"
 (defc (class nce) series-definer (struct-definer)
   ())
 
-(defc method expand-definer ((definer series-definer))
+(def method expand-definer ((definer series-definer))
   (let* ((form (%defseries `(,(name-of definer) ,@(struct-options-of definer))
                            (slot-descs-of definer)))
          (series (gethash (name-of definer) *series*)))
