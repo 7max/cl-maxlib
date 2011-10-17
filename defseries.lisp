@@ -338,12 +338,12 @@ columns) macro"
 
             (defun ,(series-desc-series-ensure-capacity desc) (series size)
               (declare (type ,series-name series) 
-                       (type (fixnum size)))
+                       (type fixnum size))
               (,(series-desc-increase-capacity desc) series size))
 
             (defun ,(series-desc-series-allocate-capacity desc) (series size)
               (declare (type ,series-name series) 
-                       (type (fixnum size)))
+                       (type fixnum size))
               (when (< size (series-length series))
                 (error "Can not allocate series capacity below its length"))
               (setf (series-capacity series) size)
