@@ -15,46 +15,68 @@
 ;;;; Code
 (cl:in-package :cl-maxlib)
 
-(def (generic e) copy-class-slots (class)
-  (:documentation "Returns the set of slots of CLASS which are
+(def (generic e) slot-list-for-copy (class instance copy-instance-reason)
+  (:documentation "Returns the set of slots of OBJ of CLASS which are
 considered for copying by COPY-INSTANCE.
 
-If CLASS is of type STANDARD-CLASS, all slots \(as returned by
-CLASS-SLOTS) are considered.")
-  (:method ((class standard-class))
+Default implementation returns CLASS-SLOTS
+
+COPY-INSTANCE-REASON is an extra parameter passed through from
+COPY-INSTANCE and COPY-INSTANCE-SLOTS that can be specialized on to
+customize copy instance functionality")
+  (:method ((class standard-class) instance copy-reason)
+    (declare (ignore instance copy-reason))
     (class-slots class)))
 
-(def (generic e) make-uninitialized-instance (class)
+(def (generic e) make-uninitialized-instance (class copy-instance-reason)
   (:documentation "Allocates a fresh uninitialized instance of the
 given class CLASS.
 
-If CLASS is of type CLASS, ALLOCATE-INSTANCE is used.")
-  (:method ((class class))
+Default implementation calls ALLOCATE-INSTANCE.
+
+COPY-INSTANCE-REASON is an extra parameter passed through from
+COPY-INSTANCE and COPY-INSTANCE-SLOTS that can be specialized on to
+customize copy instance functionality")
+  (:method ((class class) copy-instance-reason)
+    (declare (ignore copy-instance-reason))
     (allocate-instance class)))
 
-(def (generic e) copy-slot-value (object slot-name slot-value)
-  (:documentation "When COPY-INSTANCE copies slots, it calls this function
-to produce a new slot value. Default implementation simply returns SLOT-VALUE
-producing a shallow copy")
-  (:method (object slot-name slot-value)
+(def (generic e) copy-slot-value (object slot-name slot-value copy-instance-reason)
+  (:documentation "When COPY-INSTANCE copies slots, it calls this
+function to produce a new slot value. Default implementation simply
+returns SLOT-VALUE producing a shallow copy")
+  (:method (object slot-name slot-value copy-instance-reason)
+    (declare (ignore object slot-name copy-instance-reason))
     slot-value))
+
+(def (function e) copy-instance-slots (class object copy &optional copy-instance-reason)
+  "Copy slot values from OBJECT to COPY. The list of slots to copy is
+obtained by calling SLOT-LIST-FOR-COPY generic function and each slot
+is copied by calling COPY-SLOT-VALUE.
+
+COPY-INSTANCE-REASON is an extra parameter passed through from
+COPY-INSTANCE and COPY-INSTANCE-SLOTS that can be specialized on to
+customize copy instance functionality)"
+  (dolist (slot (slot-list-for-copy class object copy-instance-reason))
+    (let ((slot-name (slot-definition-name slot)))
+      (if (slot-boundp object slot-name)
+          (setf (slot-value copy slot-name)
+                (copy-slot-value object slot-name
+                                 (slot-value object slot-name)
+                                 copy-instance-reason))
+          (slot-makunbound copy slot-name)))))
 
 (def (generic e) copy-instance (object &rest initargs &key &allow-other-keys)
   (:documentation "Makes and returns a \(shallow) copy of OBJECT.
 
 An uninitialized object of the same class as OBJECT is allocated by
 calling MAKE-UNINITIALIZED-INSTANCE.  For all slots returned by
-\(COPY-CLASS-SLOTS \(CLASS-OF OBJECT)), the returned object has the
-same slot values and slot-unbound status as OBJECT.
+\(SLOT-LIST-FOR-COPY \(CLASS-OF OBJECT)), the returned object has
+the same slot values and slot-unbound status as OBJECT.
 
 REINITIALIZE-INSTANCE is called to update the copy with INITARGS.")
-  (:method ((object standard-object) &rest initargs &key &allow-other-keys)
+  (:method ((object standard-object) &rest initargs &key copy-instance-reason &allow-other-keys)
     (let* ((class (class-of object))
-           (copy (make-uninitialized-instance class)))
-      (dolist (slot (copy-class-slots class))
-        (let ((slot-name (slot-definition-name slot)))
-          (when (slot-boundp object slot-name)
-            (setf (slot-value copy slot-name)
-                  (copy-slot-value
-                   object slot-name (slot-value object slot-name))))))
+           (copy (make-uninitialized-instance class copy-instance-reason)))
+      (copy-instance-slots class object copy copy-instance-reason)
       (apply #'reinitialize-instance copy initargs))))
