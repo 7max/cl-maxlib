@@ -15,18 +15,23 @@
 ;;;; Code
 (cl:in-package :cl-maxlib)
 
-(def (generic e) slot-list-for-copy (class instance copy-instance-reason)
-  (:documentation "Returns the set of slots of OBJ of CLASS which are
-considered for copying by COPY-INSTANCE.
-
-Default implementation returns CLASS-SLOTS
-
-COPY-INSTANCE-REASON is an extra parameter passed through from
-COPY-INSTANCE and COPY-INSTANCE-SLOTS that can be specialized on to
-customize copy instance functionality")
+(def (generic e) excluded-slots-for-copy (class instance copy-reason)
+  (:documentation "Returns list of slot names that should not be
+copied by COPY-INSTANCE")
   (:method (class instance copy-reason)
-    (declare (ignore instance copy-reason))
-    (class-slots class)))
+    (declare (ignore class instance copy-reason))))
+
+(def (generic e) slots-for-copy (class instance copy-instance-reason)
+  (:documentation "Returns the list of slot names that will be copied
+by COPY-INSTANCE.
+
+Default implementation returns slot names from the call to MOP
+function (CLASS-SLOTS CLASS) filtered by result of
+EXCLUDED-SLOTS-FOR-COPY")
+  (:method (class instance copy-reason)
+    (set-difference
+     (mapcar #'slot-definition-name (class-slots class))
+     (excluded-slots-for-copy class instance copy-reason))))
 
 (def (generic e) make-uninitialized-instance (class copy-instance-reason)
   (:documentation "Allocates a fresh uninitialized instance of the
@@ -41,30 +46,30 @@ customize copy instance functionality")
     (declare (ignore copy-instance-reason))
     (allocate-instance class)))
 
-(def (generic e) copy-slot-value (object slot-name slot-value copy-instance-reason)
+(def (generic e) copy-slot-value (object slot slot-value copy-instance-reason)
   (:documentation "When COPY-INSTANCE copies slots, it calls this
-function to produce a new slot value. Default implementation simply
-returns SLOT-VALUE producing a shallow copy")
-  (:method (object slot-name slot-value copy-instance-reason)
-    (declare (ignore object slot-name copy-instance-reason))
+function to produce a new slot value. SLOT is a slot name, not a slot
+definition. Default implementation simply returns SLOT-VALUE producing
+a shallow copy")
+  (:method (object slot slot-value copy-instance-reason)
+    (declare (ignore object slot copy-instance-reason))
     slot-value))
 
 (def (function e) copy-instance-slots (class object copy &optional copy-instance-reason)
   "Copy slot values from OBJECT to COPY. The list of slots to copy is
-obtained by calling SLOT-LIST-FOR-COPY generic function and each slot
+obtained by calling SLOTS-FOR-COPY generic function and each slot
 is copied by calling COPY-SLOT-VALUE.
 
 COPY-INSTANCE-REASON is an extra parameter passed through from
 COPY-INSTANCE and COPY-INSTANCE-SLOTS that can be specialized on to
 customize copy instance functionality)"
-  (dolist (slot (slot-list-for-copy class object copy-instance-reason))
-    (let ((slot-name (slot-definition-name slot)))
-      (if (slot-boundp object slot-name)
-          (setf (slot-value copy slot-name)
-                (copy-slot-value object slot-name
-                                 (slot-value object slot-name)
-                                 copy-instance-reason))
-          (slot-makunbound copy slot-name)))))
+  (dolist (slot (slots-for-copy class object copy-instance-reason))
+    (if (slot-boundp object slot)
+        (setf (slot-value copy slot)
+              (copy-slot-value object slot
+                               (slot-value object slot)
+                               copy-instance-reason))
+        (slot-makunbound copy slot))))
 
 (def (generic e) copy-instance (object &rest initargs &key &allow-other-keys)
   (:documentation "Makes and returns a \(shallow) copy of OBJECT.
