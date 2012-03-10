@@ -24,7 +24,7 @@ Default implementation returns CLASS-SLOTS
 COPY-INSTANCE-REASON is an extra parameter passed through from
 COPY-INSTANCE and COPY-INSTANCE-SLOTS that can be specialized on to
 customize copy instance functionality")
-  (:method ((class standard-class) instance copy-reason)
+  (:method (class instance copy-reason)
     (declare (ignore instance copy-reason))
     (class-slots class)))
 
